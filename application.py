@@ -103,6 +103,16 @@ def dataframe():
 #                  figure=go.Figure(go.Figure(data=[go.Pie(labels=labels1, values=values1)],
 #                                             layout=go.Layout(title='Controller To Gateway'))))
 
+us_cities = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/us-cities-top-1k.csv")
+sql111 = """select c.UnitNumber, c.Latitude as lat, c.Longitude as lon from c where c.PK = 'M'"""
+_aa = cosmos.query_by_raw('DB_TBS_HANDLER', 'COLLECTION_DSLOG_MASTER', sql111)
+print(_aa)
+re = pd.DataFrame(_aa)
+# print(re)
+re['lat'] = re['lat'].astype('float64')
+re['lon'] = re['lon'].astype('float64')
+print(re)
+
 
 def serve_layout():
     ff_data = query_data3()
@@ -128,7 +138,12 @@ def serve_layout():
                                                    marker_color=ff_data['count'],
                                                    )).update_layout(title='B类故障Event分类汇总')
 
-                  )]
+                  ),
+        dcc.Graph(id='',
+                  figure=go.Figure(data=px.scatter_mapbox(re, lat="lat", lon="lon", hover_name='UnitNumber',
+                                                          hover_data=["UnitNumber"],
+                                                          color_discrete_sequence=["fuchsia"], zoom=3, height=300)).update_layout(mapbox_style="open-street-map").update_layout(margin={"r":0,"t":0,"l":0,"b":0}))
+    ]
     )
     # ])
     # return html.H1('The time :is ' + str(unit_gw_cloud_online()))
