@@ -143,4 +143,4 @@ app.layout = serve_layout
 #                                                                         values=query_data())],
 #                                                            layout=go.Layout(title='Gateway To Cloud')))))
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False, port=8000)
