@@ -19,8 +19,10 @@ def get_nday_list(n):
     return before_n_days
 
 
+dash_app = dash.Dash()
+app = dash_app.server
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-app = dash.Dash(__name__)
+# app = dash.Dash(__name__)
 
 labels = ['GW to Cloud 在线', 'GW to Cloud 离线']
 
@@ -132,7 +134,7 @@ def serve_layout():
     # return html.H1('The time :is ' + str(unit_gw_cloud_online()))
 
 
-app.layout = serve_layout
+dash_app.layout = serve_layout
 # app.layout = html.Div(children=[dcc.Graph(id='',
 #                                           figure=go.Figure(go.Figure(data=[go.Pie(labels=labels,
 #                                                                                   values=[query_data()[i] for i in
@@ -143,4 +145,5 @@ app.layout = serve_layout
 #                                                                         values=query_data())],
 #                                                            layout=go.Layout(title='Gateway To Cloud')))))
 if __name__ == '__main__':
-    app.run_server(debug=False, port=8000)
+    # app.run_server(debug=False, port=8000)
+    dash_app.run_server(debug=True)
