@@ -7,9 +7,7 @@ import datetime
 import time
 import pandas as pd
 import plotly.express as px
-
-df = px.data.iris()
-print(df)
+from dash.dependencies import Input, Output  # 回调
 
 
 def get_nday_list(n):
@@ -76,11 +74,17 @@ def query_data1():
     return [eight_hours, twenty_four, three_days, seven_days]
 
 
-def query_data3():
-    print('zzzz')
-    _data = cosmos.query('DB_TBS_HANDLER', 'tsb_statistics', query_params={'type': 'ff_events'})[0]
-
+def class_b_ff_event():
+    _data = cosmos.query('DB_TBS_HANDLER', 'tsb_statistics', query_params={'type': 'class_b_ff_event'})[0]
     re = pd.DataFrame(_data['data'])
+    print(1)
+    return re
+
+
+def class_c_ff_event():
+    _data = cosmos.query('DB_TBS_HANDLER', 'tsb_statistics', query_params={'type': 'class_c_ff_event'})[0]
+    re = pd.DataFrame(_data['data'])
+    print(1)
     return re
 
 
@@ -103,62 +107,91 @@ def dataframe():
 #                  figure=go.Figure(go.Figure(data=[go.Pie(labels=labels1, values=values1)],
 #                                             layout=go.Layout(title='Controller To Gateway'))))
 
-us_cities = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/us-cities-top-1k.csv")
-sql111 = """select c.UnitNumber, c.Latitude as lat, c.Longitude as lon from c where c.PK = 'M'"""
-_aa = cosmos.query_by_raw('DB_TBS_HANDLER', 'COLLECTION_DSLOG_MASTER', sql111)
-print(_aa)
-re = pd.DataFrame(_aa)
+# us_cities = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/us-cities-top-1k.csv")
+# sql111 = """select c.UnitNumber, c.Latitude as lat, c.Longitude as lon from c where c.PK = 'M'"""
+# _aa = cosmos.query_by_raw('DB_TBS_HANDLER', 'COLLECTION_DSLOG_MASTER', sql111)
+# print(_aa)
+# re = pd.DataFrame(_aa)
+# # print(re)
+# re['lat'] = re['lat'].astype('float64')
+# re['lon'] = re['lon'].astype('float64')
 # print(re)
-re['lat'] = re['lat'].astype('float64')
-re['lon'] = re['lon'].astype('float64')
-print(re)
 
 
 def serve_layout():
-    ff_data = query_data3()
-    unit_count = query_data()
-    longtime_offline_count = query_data1()
-    return html.Div(children=[
-        dcc.Graph(id='',
-                  figure=go.Figure(go.Figure(data=[go.Pie(labels=labels,
-                                                          values=unit_count[0:2])],
-                                             layout=go.Layout(title='Gateway To Cloud')))),
-        dcc.Graph(id='',
-                  figure=go.Figure(
-                      go.Figure(data=[go.Pie(labels=labels1, values=unit_count[2:5])],
-                                layout=go.Layout(title='Controller to GW')))),
-        dcc.Graph(id='',
-                  figure=go.Figure([go.Bar(x=lables3, y=longtime_offline_count)],
-                                   layout=go.Layout(title='Gateway离线电梯数量统计')),
-                  ),
-        dcc.Graph(id='',
-                  figure=go.Figure(data=go.Scatter(x=ff_data['event_name'],
-                                                   y=ff_data['count'],
-                                                   mode='markers',
-                                                   marker_color=ff_data['count'],
-                                                   )).update_layout(title='B类故障Event分类汇总')
-
-                  ),
-        dcc.Graph(id='',
-                  figure=go.Figure(data=px.scatter_mapbox(re, lat="lat", lon="lon", hover_name='UnitNumber',
-                                                          hover_data=["UnitNumber"],
-                                                          color_discrete_sequence=["fuchsia"], zoom=3, height=300)).update_layout(mapbox_style="open-street-map").update_layout(margin={"r":0,"t":0,"l":0,"b":0}))
-    ]
-    )
-    # ])
-    # return html.H1('The time :is ' + str(unit_gw_cloud_online()))
+    return html.Div([
+        html.Div([
+            html.Div([
+                dcc.Dropdown(
+                    id='xaxis-column',
+                    options=[{'label': 'B类故障event', 'value': 'b_event'}, {'label': 'C类故障event', 'value': 'c_event'}],
+                    # 打开页面默认值为b_event
+                    value='b_event')],
+                style=dict(width='48%', display='inline-block')
+            )
+        ]),
+        dcc.Graph(id='indicator-graphic'),
+    ])
 
 
 dash_app.layout = serve_layout
-# app.layout = html.Div(children=[dcc.Graph(id='',
-#                                           figure=go.Figure(go.Figure(data=[go.Pie(labels=labels,
-#                                                                                   values=[query_data()[i] for i in
-#                                                                                           labels])],
-#                                                                      layout=go.Layout(title='Gateway To Cloud')))))
-# app.layout = html.Div(dcc.Graph(id='',
-#                                 figure=go.Figure(go.Figure(data=[go.Pie(labels=labels,
-#                                                                         values=query_data())],
-#                                                            layout=go.Layout(title='Gateway To Cloud')))))
+
+
+# 回调
+@dash_app.callback(
+    Output('indicator-graphic', 'figure'),
+    [Input('xaxis-column', 'value')])
+def update_graph(xaxis_column_name):
+    if xaxis_column_name == 'b_event':
+        ff_data = class_b_ff_event()
+    else:
+        ff_data = class_c_ff_event()
+    title = 'B类故障Event分类汇总' if xaxis_column_name == 'b_event' else 'C类故障Event分类汇总'
+    result = dict(
+        data=[go.Scatter(x=ff_data['event_name'],
+                         y=ff_data['count'],
+                         mode='markers',
+                         marker_color=ff_data['count'],
+                         )],
+        layout=go.Layout(
+            title=title,
+            margin={'l': 40, 'b': 40, 't': 30, 'r': 0},
+            hovermode='closest'
+        )
+    )
+    return result
+
+
+# dcc.Graph(id='',
+#           figure=go.Figure(go.Figure(data=[go.Pie(labels=labels,
+#                                                   values=unit_count[0:2])],
+#                                      layout=go.Layout(title='Gateway To Cloud'))))
+
+# dcc.Graph(id='',
+#                   figure=go.Figure(
+#                       go.Figure(data=[go.Pie(labels=labels1, values=unit_count[2:5])],
+#                                 layout=go.Layout(title='Controller to GW'))))
+
+# dcc.Graph(id='',
+#                   figure=go.Figure([go.Bar(x=lables3, y=longtime_offline_count)],
+#                                    layout=go.Layout(title='Gateway离线电梯数量统计')),
+#                   )
+
+
+# dcc.Graph(id='',
+#           figure=go.Figure(data=go.Scatter(x=ff_data['event_name'],
+#                                            y=ff_data['count'],
+#                                            mode='markers',
+#                                            marker_color=ff_data['count'],
+#                                            )).update_layout(title='B类故障Event分类汇总')
+#           )
+
+# dcc.Graph(id='',
+#           figure=go.Figure(data=px.scatter_mapbox(re, lat="lat", lon="lon", hover_name='UnitNumber',
+#                                                   hover_data=["UnitNumber"],
+#                                                   color_discrete_sequence=["fuchsia"], zoom=3,
+#                                                   height=300)).update_layout(
+#               mapbox_style="open-street-map").update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0}))
 if __name__ == '__main__':
     # app.run_server(debug=False, port=8000)
-    dash_app.run_server(debug=True)
+    dash_app.run_server(debug=True, port=8000)
