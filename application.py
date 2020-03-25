@@ -7,6 +7,7 @@ import datetime
 import time
 import pandas as pd
 import plotly.express as px
+
 from dash.dependencies import Input, Output  # 回调
 
 
@@ -18,7 +19,6 @@ def get_nday_list(n):
 
 
 dash_app = dash.Dash()
-app = dash_app.server
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 # app = dash.Dash(__name__)
 
@@ -108,17 +108,18 @@ def dataframe():
 #                                             layout=go.Layout(title='Controller To Gateway'))))
 
 # us_cities = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/us-cities-top-1k.csv")
-# sql111 = """select c.UnitNumber, c.Latitude as lat, c.Longitude as lon from c where c.PK = 'M'"""
-# _aa = cosmos.query_by_raw('DB_TBS_HANDLER', 'COLLECTION_DSLOG_MASTER', sql111)
-# print(_aa)
-# re = pd.DataFrame(_aa)
-# # print(re)
-# re['lat'] = re['lat'].astype('float64')
-# re['lon'] = re['lon'].astype('float64')
-# print(re)
+def unit_geo_data():
+    sql111 = """select c.UnitNumber, c.Latitude as lat, c.Longitude as lon from c where c.PK = 'M'"""
+    _aa = cosmos.query_by_raw('DB_TBS_HANDLER', 'COLLECTION_DSLOG_MASTER', sql111)
+    data = pd.DataFrame(_aa)
+    # print(re)
+    data['lat'] = data['lat'].astype('float64')
+    data['lon'] = data['lon'].astype('float64')
+    return data
 
 
 def serve_layout():
+    geo_data = unit_geo_data()
     return html.Div([
         html.Div([
             html.Div([
@@ -131,6 +132,15 @@ def serve_layout():
             )
         ]),
         dcc.Graph(id='indicator-graphic'),
+
+
+        dcc.Graph(id='',
+                  figure=go.Figure(data=px.scatter_mapbox(geo_data, lat="lat", lon="lon", hover_name='UnitNumber',
+                                                          hover_data=["UnitNumber"],
+                                                          color_discrete_sequence=["blue"], zoom=3,
+                                                          height=750)).update_layout(
+                      mapbox_style="open-street-map").update_layout(margin={"r": 0, "t": 100, "l": 0, "b": 0}))
+
     ])
 
 
@@ -192,6 +202,10 @@ def update_graph(xaxis_column_name):
 #                                                   color_discrete_sequence=["fuchsia"], zoom=3,
 #                                                   height=300)).update_layout(
 #               mapbox_style="open-street-map").update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0}))
+
+# for azure start flask app
+app = dash_app.server
+
 if __name__ == '__main__':
     # app.run_server(debug=False, port=8000)
-    dash_app.run_server(debug=True, port=8000)
+    dash_app.run_server(debug=True, port=8050)
