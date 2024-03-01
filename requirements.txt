@@ -1,7 +1,7 @@
 dash_core_components==1.8.1
 pandas==1.0.2
 plotly==4.5.4
-dash_html_components==1.0.2
+dash_html_components==2.0.0
 dash==1.9.1
 azure_storage==0.36.0
 azure-cosmos==3.1.2
